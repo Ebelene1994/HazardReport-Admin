@@ -128,7 +128,7 @@ We welcome contributions from the community! Here's how you can help:
 
 ### Commit Message Format
 
-```
+```text
 Type: Brief description
 
 Detailed explanation of changes (optional)
