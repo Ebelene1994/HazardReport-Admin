@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { apiGetAllReports } from '../services/reports';
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { apiGetAdminProfile } from '../services/auth';
 import { baseUrl } from '../services/config';
+import { apiGetAllReports } from '../services/reports';
 
 export interface Attachment {
     url: string;
@@ -75,88 +75,88 @@ interface DashboardContextType {
 }
 
 const INITIAL_REPORTS: Report[] = [
-    { 
-        id: '#dg6879', 
-        title: 'Severe Flooding', 
-        category: 'Floods', 
-        location: 'Accra Central, Market sq.', 
-        name: 'Ama Boateng', 
-        date: 'Oct 24, 2026', 
-        time: '13:28', 
+    {
+        id: '#dg6879',
+        title: 'Severe Flooding',
+        category: 'Floods',
+        location: 'Accra Central, Market sq.',
+        name: 'Ama Boateng',
+        date: 'Oct 24, 2026',
+        time: '13:28',
         status: 'Confirmed',
         locationData: { text: 'Accra Central, Market sq.', city: 'Accra', country: 'Ghana' }
     },
-    { 
-        id: '#dg3456', 
-        title: 'Downed Powerline', 
-        category: 'Others', 
-        location: 'Kumasi, Kejetia Market sq.', 
-        name: 'Ama Boateng', 
-        date: 'Sep 23, 2026', 
-        time: '20:22', 
+    {
+        id: '#dg3456',
+        title: 'Downed Powerline',
+        category: 'Others',
+        location: 'Kumasi, Kejetia Market sq.',
+        name: 'Ama Boateng',
+        date: 'Sep 23, 2026',
+        time: '20:22',
         status: 'Active',
         locationData: { text: 'Kumasi, Kejetia Market sq.', city: 'Kumasi', country: 'Ghana' }
     },
-    { 
-        id: '#dg1234', 
-        title: 'Massive Potholes', 
-        category: 'Others', 
-        location: 'Accra Central, Market sq.', 
-        name: 'Admin', 
-        date: 'Aug 10, 2026', 
-        time: '12:56', 
+    {
+        id: '#dg1234',
+        title: 'Massive Potholes',
+        category: 'Others',
+        location: 'Accra Central, Market sq.',
+        name: 'Admin',
+        date: 'Aug 10, 2026',
+        time: '12:56',
         status: 'Pending',
         locationData: { text: 'Accra Central, Market sq.', city: 'Accra', country: 'Ghana' }
     },
-    { 
-        id: '#dg5678', 
-        title: 'False Fire Alarm', 
-        category: 'Wildfire', 
-        location: 'Mole National Park', 
-        name: 'Ama Boateng', 
-        date: 'Jun 21, 2026', 
-        time: '19:00', 
+    {
+        id: '#dg5678',
+        title: 'False Fire Alarm',
+        category: 'Wildfire',
+        location: 'Mole National Park',
+        name: 'Ama Boateng',
+        date: 'Jun 21, 2026',
+        time: '19:00',
         status: 'Spam',
         locationData: { text: 'Mole National Park', city: 'Mole', country: 'Ghana' }
     },
 ];
 
 const INITIAL_ANNOUNCEMENTS: Announcement[] = [
-    { 
-        id: 1, 
-        title: 'Flood warning: Volta region', 
-        detail: 'Immediate precaution advised for all residents in the Volta region due to rising water levels.', 
-        date: 'Oct 12, 2023', 
-        time: '12:23 PM', 
-        category: 'Alert', 
+    {
+        id: 1,
+        title: 'Flood warning: Volta region',
+        detail: 'Immediate precaution advised for all residents in the Volta region due to rising water levels.',
+        date: 'Oct 12, 2023',
+        time: '12:23 PM',
+        category: 'Alert',
         status: 'Pinned',
         location: { text: 'Volta Region, Ghana' }
     },
-    { 
-        id: 2, 
-        title: 'New Reporting Guidelines', 
-        detail: 'We have updated how you can report hazards to ensure faster response times.', 
-        date: 'Oct 12, 2023', 
-        time: '12:23 PM', 
-        category: 'Info', 
+    {
+        id: 2,
+        title: 'New Reporting Guidelines',
+        detail: 'We have updated how you can report hazards to ensure faster response times.',
+        date: 'Oct 12, 2023',
+        time: '12:23 PM',
+        category: 'Info',
         status: 'Active'
     },
-    { 
-        id: 3, 
-        title: 'Scheduled Maintenance', 
-        detail: 'System will be down for 2 hours for scheduled maintenance and upgrades.', 
-        date: 'Oct 12, 2023', 
-        time: '12:23 PM', 
-        category: 'Update', 
+    {
+        id: 3,
+        title: 'Scheduled Maintenance',
+        detail: 'System will be down for 2 hours for scheduled maintenance and upgrades.',
+        date: 'Oct 12, 2023',
+        time: '12:23 PM',
+        category: 'Update',
         status: 'Archived'
     },
-    { 
-        id: 4, 
-        title: 'Pothole repairs at Madina', 
-        detail: 'Road blocked from Monday to Friday for pothole repairs. Use alternate routes.', 
-        date: 'Oct 12, 2023', 
-        time: '12:23 PM', 
-        category: 'Info', 
+    {
+        id: 4,
+        title: 'Pothole repairs at Madina',
+        detail: 'Road blocked from Monday to Friday for pothole repairs. Use alternate routes.',
+        date: 'Oct 12, 2023',
+        time: '12:23 PM',
+        category: 'Info',
         status: 'Active',
         location: { text: 'Madina, Accra' }
     },
@@ -165,25 +165,28 @@ const INITIAL_ANNOUNCEMENTS: Announcement[] = [
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
 
 const loadUserProfileFromStorage = (): UserProfile => {
+    const DEFAULT_PROFILE: UserProfile = {
+        name: "Admin User",
+        email: "admin@ghhazard.com",
+        phone: "+233 00 000 0000",
+        avatar: "",
+    };
+
     const stored = localStorage.getItem("adminProfile");
     if (stored) {
         try {
             const admin = JSON.parse(stored);
             return {
-                name: admin.userName || "Admin User",
-                email: admin.email || "admin@ghhazard.com",
-                phone: admin.phoneNumber || "+233 00 000 0000",
-                avatar: admin.avatar || "",
+                name: admin.userName || DEFAULT_PROFILE.name,
+                email: admin.email || DEFAULT_PROFILE.email,
+                phone: admin.phoneNumber || DEFAULT_PROFILE.phone,
+                avatar: admin.avatar || DEFAULT_PROFILE.avatar,
             };
         } catch (e) {
             console.error("Failed to parse admin profile", e);
         }
     }
-    return {
-        name: "Sarah Johnson",
-        email: "sarah.johnson@ghhazard.com",
-        phone: "+233 55 123 4567"
-    };
+    return DEFAULT_PROFILE;
 };
 
 export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -284,13 +287,13 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
     };
 
     const updateReport = (id: string, updates: Partial<Report>) => {
-        setReports(prev => prev.map(report => 
+        setReports(prev => prev.map(report =>
             report.id === id ? { ...report, ...updates } : report
         ));
     };
 
     const updateAnnouncement = (id: number, updates: Partial<Announcement>) => {
-        setAnnouncements(prev => prev.map(announcement => 
+        setAnnouncements(prev => prev.map(announcement =>
             announcement.id === id ? { ...announcement, ...updates } : announcement
         ));
     };
@@ -308,11 +311,11 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
     };
 
     return (
-        <DashboardContext.Provider value={{ 
-            reports, 
-            announcements, 
+        <DashboardContext.Provider value={{
+            reports,
+            announcements,
             userProfile,
-            addReport, 
+            addReport,
             addAnnouncement,
             updateReport,
             updateAnnouncement,
