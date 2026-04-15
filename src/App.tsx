@@ -1,5 +1,5 @@
 import { Toaster } from "react-hot-toast";
-import { createBrowserRouter, RouterProvider, } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { DashboardProvider } from "./context/DashboardContext";
 import ErrorPage from "./errorpage";
@@ -55,7 +55,7 @@ function App() {
         },
         {
             path: "/",
-            element: <AdminLogin />
+            element: <Navigate to="/admin-login" replace />
         }
     ]);
 

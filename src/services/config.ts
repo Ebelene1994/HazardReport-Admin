@@ -26,10 +26,11 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 || error.response?.status === 404) {
+    // Only clear token on 401 (Unauthorized), not 404 or other errors
+    if (error.response?.status === 401) {
       localStorage.removeItem("token");
       localStorage.removeItem("adminProfile");
-      window.location.href = "/admin-login";
+      // Let components handle redirect - don't force page reload
     }
     return Promise.reject(error);
   }

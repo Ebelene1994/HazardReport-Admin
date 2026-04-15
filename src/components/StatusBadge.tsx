@@ -5,7 +5,7 @@ interface StatusBadgeProps {
 }
 
 const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
-  const normalizedStatus = status.toLowerCase();
+  const normalizedStatus = status?.toLowerCase() || "unknown";
 
   let bgClass = "bg-gray-100";
   let textClass = "text-gray-600";
@@ -64,16 +64,18 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
       textClass = "text-gray-600";
   }
 
+  const displayStatus = status || "Unknown";
+
   // Handle transparent background cases for Categories in Announcements
   if (['alert', 'info', 'update'].includes(normalizedStatus)) {
-      return <span className={`text-sm font-medium ${textClass}`}>{status}</span>;
+      return <span className={`text-sm font-medium ${textClass}`}>{displayStatus}</span>;
   }
 
   return (
     <span
       className={`px-3 py-1 rounded-full text-xs font-medium ${bgClass} ${textClass}`}
     >
-      {status}
+      {displayStatus}
     </span>
   );
 };
