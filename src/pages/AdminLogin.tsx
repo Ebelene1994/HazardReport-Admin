@@ -1,6 +1,6 @@
 import React from "react";
 import hazardImage from "../assets/images/antoine-giret-7_TSzqJms4w-unsplash.jpg";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { apiAdminLogin } from "../services/auth";
 import { useDashboard } from "../context/DashboardContext";
 import toast from "react-hot-toast";
@@ -9,6 +9,11 @@ const AdminLogin: React.FC = () => {
   const navigate = useNavigate();
   const { refreshData } = useDashboard();
   const [isLoading, setIsLoading] = React.useState(false);
+
+  const token = localStorage.getItem("token");
+  if (token) {
+    return <Navigate to="/admin-dashboard" replace />;
+  }
 
   const saveLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -29,8 +34,8 @@ const AdminLogin: React.FC = () => {
         }
 
         toast.success("Login successful!");
-        await refreshData();
         navigate("/admin-dashboard");
+        await refreshData();
       }
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || "Login failed";
