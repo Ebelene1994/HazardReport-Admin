@@ -1,5 +1,6 @@
 import React, { useState, useRef, useMemo } from "react";
 import StatusBadge from "../components/StatusBadge";
+import ConfirmModal from "../components/ConfirmModal";
 import { FiVolume2, FiSearch, FiChevronDown, FiPaperclip, FiMapPin, FiX, FiFile, FiImage, FiFileText, FiVideo, FiEye, FiDownload, FiExternalLink, FiTrash, FiEdit, FiCheck, FiPlus } from "react-icons/fi";
 import toast from "react-hot-toast";
 import adminDashboard from '../assets/images/adminDashboard.jpg';
@@ -40,6 +41,8 @@ const Announcements: React.FC = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [announcementToDelete, setAnnouncementToDelete] = useState<number | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -226,10 +229,17 @@ const Announcements: React.FC = () => {
   };
 
   const handleDeleteAnnouncement = (id: number) => {
-    if (window.confirm('Are you sure you want to delete this announcement?')) {
-      deleteAnnouncement(id);
+    setAnnouncementToDelete(id);
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDeleteAnnouncement = () => {
+    if (announcementToDelete !== null) {
+      deleteAnnouncement(announcementToDelete);
       toast.success('Announcement deleted successfully');
       setShowViewModal(false);
+      setDeleteModalOpen(false);
+      setAnnouncementToDelete(null);
     }
   };
 
@@ -992,6 +1002,20 @@ const Announcements: React.FC = () => {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setAnnouncementToDelete(null);
+        }}
+        onConfirm={confirmDeleteAnnouncement}
+        title="Delete Announcement"
+        message="Are you sure you want to delete this announcement? This action cannot be undone and the announcement will be permanently removed from the system."
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
     </div>
   );
 };

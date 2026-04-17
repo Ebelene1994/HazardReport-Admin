@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import MetricCard from "../components/MetricCard";
 import StatusBadge from "../components/StatusBadge";
+import ConfirmModal from "../components/ConfirmModal";
 import { FiHome, FiSearch, FiCheckSquare, FiAlertTriangle, FiChevronDown, FiPaperclip, FiMapPin, FiX, FiImage, FiExternalLink, FiCheck, FiTrash, FiFile, FiFileText, FiVideo, FiMap, FiEye, FiDownload, FiCloud } from "react-icons/fi";
 import adminDashboard from '../assets/images/adminDashboard.jpg';
 import { useDashboard, Report } from "../context/DashboardContext";
@@ -14,6 +15,8 @@ const ContentModeration: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [reportToDelete, setReportToDelete] = useState<string | null>(null);
   const itemsPerPage = 4;
 
   const filteredAndSortedReports = useMemo(() => {
@@ -50,10 +53,17 @@ const ContentModeration: React.FC = () => {
   };
 
   const handleDelete = (reportId: string) => {
-    if (window.confirm('Are you sure you want to delete this report?')) {
-      deleteReport(reportId);
+    setReportToDelete(reportId);
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (reportToDelete !== null) {
+      deleteReport(reportToDelete);
       toast.success('Report deleted successfully');
       setShowViewModal(false);
+      setDeleteModalOpen(false);
+      setReportToDelete(null);
     }
   };
 
@@ -480,6 +490,20 @@ const ContentModeration: React.FC = () => {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setReportToDelete(null);
+        }}
+        onConfirm={confirmDelete}
+        title="Delete Report"
+        message="Are you sure you want to delete this report? This action cannot be undone and the report will be permanently removed from the system."
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
     </div>
   );
 };
