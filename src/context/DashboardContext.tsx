@@ -2,6 +2,7 @@ import React, { createContext, ReactNode, useContext, useEffect, useState } from
 import { apiGetAdminProfile } from '../services/auth';
 import { baseUrl } from '../services/config';
 import { apiGetAllReports } from '../services/reports';
+import { userApi, BackendUser } from '../services/userApi';
 
 export interface Attachment {
     url: string;
@@ -25,6 +26,21 @@ export interface UserProfile {
     email: string;
     phone: string;
     avatar?: string;
+}
+
+export interface User {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    date: string;
+    time: string;
+    reports: number;
+    status: 'Active' | 'Pending' | 'Suspended';
+    role: 'admin' | 'user';
+    avatar?: string;
+    address?: string;
+    lastActive?: string;
 }
 
 export interface Report {
@@ -62,6 +78,7 @@ export interface Announcement {
 interface DashboardContextType {
     reports: Report[];
     announcements: Announcement[];
+    users: User[];
     userProfile: UserProfile;
     addReport: (report: Omit<Report, 'id' | 'date' | 'time'>) => Report;
     addAnnouncement: (announcement: Omit<Announcement, 'id' | 'date' | 'time'>) => Announcement;
@@ -71,7 +88,11 @@ interface DashboardContextType {
     deleteAnnouncement: (id: number) => void;
     updateUserProfile: (updates: Partial<UserProfile>) => void;
     refreshData: () => Promise<void>;
+    refreshUsers: () => Promise<void>;
+    updateUser: (id: string, updates: Partial<User>) => Promise<void>;
+    deleteUser: (id: string) => Promise<void>;
     isLoading: boolean;
+    isLoadingUsers: boolean;
 }
 
 const INITIAL_REPORTS: Report[] = [
@@ -192,8 +213,10 @@ const loadUserProfileFromStorage = (): UserProfile => {
 export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [reports, setReports] = useState<Report[]>(INITIAL_REPORTS);
     const [announcements, setAnnouncements] = useState<Announcement[]>(INITIAL_ANNOUNCEMENTS);
+    const [users, setUsers] = useState<User[]>([]);
     const [userProfile, setUserProfile] = useState<UserProfile>(loadUserProfileFromStorage());
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [isLoadingUsers, setIsLoadingUsers] = useState<boolean>(false);
 
     const refreshData = async () => {
         const token = localStorage.getItem("token");
@@ -310,10 +333,85 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
         setUserProfile(prev => ({ ...prev, ...updates }));
     };
 
+    const mapBackendUser = (backendUser: BackendUser): User => {
+        const createdAt = backendUser.createdAt ? new Date(backendUser.createdAt) : new Date();
+        const isActive = backendUser.isActive ?? true;
+        const isVerified = backendUser.isVerified ?? false;
+        
+        let status: 'Active' | 'Pending' | 'Suspended' = 'Active';
+        if (!isActive) {
+            status = 'Suspended';
+        } else if (!isVerified) {
+            status = 'Pending';
+        }
+
+        return {
+            id: backendUser._id,
+            name: backendUser.userName,
+            email: backendUser.email,
+            phone: backendUser.phoneNumber,
+            date: createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            time: createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            reports: backendUser.reportsCount || 0,
+            status,
+            role: backendUser.role || 'user',
+            avatar: backendUser.avatar ? (backendUser.avatar.startsWith('http') ? backendUser.avatar : `${baseUrl}/${backendUser.avatar}`) : undefined,
+            address: undefined,
+            lastActive: undefined,
+        };
+    };
+
+    const refreshUsers = async () => {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        setIsLoadingUsers(true);
+        try {
+            const backendUsers = await userApi.getAllUsers();
+            if (!Array.isArray(backendUsers)) return;
+            const mappedUsers = backendUsers.map(mapBackendUser);
+            setUsers(mappedUsers);
+        } catch (error: any) {
+            console.error('Error fetching users:', error.message);
+        } finally {
+            setIsLoadingUsers(false);
+        }
+    };
+
+    const updateUser = async (id: string, updates: Partial<User>) => {
+        try {
+            const backendUpdates: Parameters<typeof userApi.updateUser>[1] = {};
+            if (updates.name) backendUpdates.userName = updates.name;
+            if (updates.email) backendUpdates.email = updates.email;
+            if (updates.phone) backendUpdates.phoneNumber = updates.phone;
+            if (updates.status) {
+                backendUpdates.isActive = updates.status !== 'Suspended';
+                backendUpdates.isVerified = updates.status !== 'Pending';
+            }
+
+            await userApi.updateUser(id, backendUpdates);
+            await refreshUsers();
+        } catch (error) {
+            console.error("Error updating user:", error);
+            throw error;
+        }
+    };
+
+    const deleteUser = async (id: string) => {
+        try {
+            await userApi.deleteUser(id);
+            setUsers(prev => prev.filter(user => user.id !== id));
+        } catch (error) {
+            console.error("Error deleting user:", error);
+            throw error;
+        }
+    };
+
     return (
         <DashboardContext.Provider value={{
             reports,
             announcements,
+            users,
             userProfile,
             addReport,
             addAnnouncement,
@@ -323,7 +421,11 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
             deleteAnnouncement,
             updateUserProfile,
             refreshData,
-            isLoading
+            refreshUsers,
+            updateUser,
+            deleteUser,
+            isLoading,
+            isLoadingUsers
         }}>
             {children}
         </DashboardContext.Provider>
