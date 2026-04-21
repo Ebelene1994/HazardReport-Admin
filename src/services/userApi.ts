@@ -1,36 +1,7 @@
 import { apiClient } from './config';
+import { BackendUser, UpdateUserData, CreateUserData } from '../interfaces/user';
 
-export interface BackendUser {
-  _id: string;
-  userName: string;
-  email: string;
-  phoneNumber: string;
-  avatar?: string;
-  role: 'user' | 'admin';
-  isActive?: boolean;
-  isVerified?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-  reportsCount?: number;
-}
-
-export interface UpdateUserData {
-  userName?: string;
-  email?: string;
-  phoneNumber?: string;
-  avatar?: File;
-  isActive?: boolean;
-  isVerified?: boolean;
-}
-
-export interface CreateUserData {
-  userName: string;
-  email: string;
-  phoneNumber: string;
-  password: string;
-  avatar?: File;
-  role?: 'user' | 'admin';
-}
+export type { BackendUser, UpdateUserData, CreateUserData } from '../interfaces/user';
 
 export const userApi = {
   getAllUsers: async (): Promise<BackendUser[]> => {

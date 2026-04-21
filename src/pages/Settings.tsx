@@ -68,12 +68,16 @@ const Settings: React.FC = () => {
 
       const response = await apiUpdateAdminProfile(formData);
       if (response.status === 200) {
-        updateUserProfile({
+        const updatedUser = response.data?.user || response.data;
+        const updatedProfile = {
           name: profile.name,
           email: profile.email,
           phone: profile.phone,
-          avatar: profileImage || undefined
-        });
+          avatar: updatedUser?.avatar || profileImage || undefined
+        };
+        updateUserProfile(updatedProfile);
+        // Update localStorage to persist changes across reloads
+        localStorage.setItem("adminProfile", JSON.stringify({ ...updatedUser, ...updatedProfile }));
         toast.success("Settings saved successfully!");
       }
     } catch (error: any) {

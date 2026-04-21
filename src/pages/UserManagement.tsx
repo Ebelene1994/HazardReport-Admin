@@ -5,7 +5,8 @@ import ConfirmModal from "../components/ConfirmModal";
 import { FiHome, FiUsers, FiCheckSquare, FiSearch, FiChevronDown, FiX, FiEye, FiEdit, FiTrash, FiMail, FiPhone, FiFileText, FiCheck, FiAlertCircle, FiSlash, FiCamera, FiLoader, FiShield, FiUser } from "react-icons/fi";
 import toast from "react-hot-toast";
 import adminDashboard from '../assets/images/adminDashboard.jpg';
-import { useDashboard, User } from "../context/DashboardContext";
+import { useDashboard } from "../context/DashboardContext";
+import { User } from "../interfaces/user";
 
 const UserManagement: React.FC = () => {
   const { users, refreshUsers, updateUser, deleteUser, isLoadingUsers } = useDashboard();
@@ -18,6 +19,7 @@ const UserManagement: React.FC = () => {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -112,17 +114,24 @@ const UserManagement: React.FC = () => {
     
     try {
       setIsSubmitting(true);
-      await updateUser(editingUser.id, {
+      // Build updates object - pass avatarFile separately to bypass type check
+      const updates: Parameters<typeof updateUser>[1] = {
         name: editingUser.name,
         email: editingUser.email,
         phone: editingUser.phone,
         status: editingUser.status,
-      });
+      };
+      // Add avatar file if selected (bypassing TypeScript string check)
+      if (selectedAvatarFile) {
+        (updates as any).avatar = selectedAvatarFile;
+      }
+      await updateUser(editingUser.id, updates);
       
       toast.success('User updated successfully');
       setShowEditModal(false);
       setEditingUser(null);
       setPreviewAvatar(null);
+      setSelectedAvatarFile(null);
     } catch (error) {
       toast.error('Failed to update user');
     } finally {
@@ -142,12 +151,18 @@ const UserManagement: React.FC = () => {
         return;
       }
       
+      // Store the actual File for API upload
+      if (isEditModal) {
+        setSelectedAvatarFile(file);
+      }
+      
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
         if (isEditModal && editingUser) {
           setPreviewAvatar(result);
-          setEditingUser({ ...editingUser, avatar: result });
+          // Don't set base64 as avatar, just for preview
+          setEditingUser({ ...editingUser });
         }
       };
       reader.readAsDataURL(file);
@@ -162,6 +177,7 @@ const UserManagement: React.FC = () => {
   const openEditModal = (user: User) => {
     setEditingUser({ ...user });
     setPreviewAvatar(user.avatar || null);
+    setSelectedAvatarFile(null); // Reset any previously selected file
     setShowEditModal(true);
     setShowViewModal(false);
   };
@@ -708,7 +724,7 @@ const UserManagement: React.FC = () => {
             </div>
             <div className="p-4 border-t border-gray-100 flex justify-end gap-3">
               <button 
-                onClick={() => { setShowEditModal(false); setPreviewAvatar(null); }}
+                onClick={() => { setShowEditModal(false); setPreviewAvatar(null); setSelectedAvatarFile(null); }}
                 className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
                 disabled={isSubmitting}
               >

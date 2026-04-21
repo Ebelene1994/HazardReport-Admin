@@ -4,7 +4,9 @@ import ConfirmModal from "../components/ConfirmModal";
 import { FiVolume2, FiSearch, FiChevronDown, FiPaperclip, FiMapPin, FiX, FiFile, FiImage, FiFileText, FiVideo, FiEye, FiDownload, FiExternalLink, FiTrash, FiEdit, FiCheck, FiPlus } from "react-icons/fi";
 import toast from "react-hot-toast";
 import adminDashboard from '../assets/images/adminDashboard.jpg';
-import { useDashboard, Announcement, Attachment, LocationData } from "../context/DashboardContext";
+import { useDashboard } from "../context/DashboardContext";
+import { Announcement } from "../interfaces/announcement";
+import { Attachment, LocationData } from "../interfaces/attachment";
 import { announcementApi } from "../services/announcementApi";
 
 interface UploadedFile {
@@ -16,7 +18,7 @@ interface UploadedFile {
 }
 
 const Announcements: React.FC = () => {
-  const { announcements, addAnnouncement, deleteAnnouncement, updateAnnouncement, addReport } = useDashboard();
+  const { announcements, addAnnouncement, deleteAnnouncement, updateAnnouncement } = useDashboard();
   
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<"Alert" | "Info" | "Update">("Alert");
@@ -191,31 +193,13 @@ const Announcements: React.FC = () => {
         }
       }
 
-      const newAnnouncement = addAnnouncement({
+      addAnnouncement({
         title,
         detail: message,
         category: category.toLowerCase(),
         status: pinToTop ? "Pinned" : "Active",
         location: locationData.text ? locationData : undefined,
         attachments: uploadedAttachments.length > 0 ? uploadedAttachments : undefined
-      });
-
-      const firstAttachmentUrl = uploadedAttachments.length > 0 ? uploadedAttachments[0].url : undefined;
-      const attachmentNames = uploadedAttachments.length > 0 
-        ? uploadedAttachments.map(a => a.filename).join(', ')
-        : undefined;
-
-      addReport({
-        title,
-        location: locationData.text || "Global",
-        name: "Admin System",
-        status: "Confirmed",
-        category: category,
-        reportType: 'announcement',
-        attachmentName: attachmentNames,
-        attachmentUrl: firstAttachmentUrl,
-        locationData: locationData.text ? locationData : undefined,
-        announcementId: newAnnouncement.id
       });
 
       toast.success("Announcement posted successfully!");
@@ -233,30 +217,38 @@ const Announcements: React.FC = () => {
     setDeleteModalOpen(true);
   };
 
-  const confirmDeleteAnnouncement = () => {
+  const confirmDeleteAnnouncement = async () => {
     if (announcementToDelete !== null) {
-      deleteAnnouncement(announcementToDelete);
-      toast.success('Announcement deleted successfully');
-      setShowViewModal(false);
-      setDeleteModalOpen(false);
-      setAnnouncementToDelete(null);
+      try {
+        await deleteAnnouncement(announcementToDelete);
+        toast.success('Announcement deleted successfully');
+        setShowViewModal(false);
+        setDeleteModalOpen(false);
+        setAnnouncementToDelete(null);
+      } catch (error) {
+        toast.error('Failed to delete announcement');
+      }
     }
   };
 
-  const handleUpdateAnnouncement = () => {
+  const handleUpdateAnnouncement = async () => {
     if (!editingAnnouncement) return;
     
-    updateAnnouncement(editingAnnouncement.id, {
-      title: editingAnnouncement.title,
-      detail: editingAnnouncement.detail,
-      category: editingAnnouncement.category.toLowerCase(),
-      status: editingAnnouncement.status
-    });
-    
-    toast.success('Announcement updated successfully');
-    setShowEditModal(false);
-    setEditingAnnouncement(null);
-    setShowViewModal(false);
+    try {
+      await updateAnnouncement(editingAnnouncement.id, {
+        title: editingAnnouncement.title,
+        detail: editingAnnouncement.detail,
+        category: editingAnnouncement.category.toLowerCase(),
+        status: editingAnnouncement.status
+      });
+      
+      toast.success('Announcement updated successfully');
+      setShowEditModal(false);
+      setEditingAnnouncement(null);
+      setShowViewModal(false);
+    } catch (error) {
+      toast.error('Failed to update announcement');
+    }
   };
 
   const openEditModal = (announcement: Announcement) => {

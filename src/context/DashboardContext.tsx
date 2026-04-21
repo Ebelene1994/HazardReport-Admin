@@ -1,187 +1,18 @@
-import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import React, { createContext, ReactNode, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { apiGetAdminProfile } from '../services/auth';
 import { baseUrl } from '../services/config';
-import { apiGetAllReports } from '../services/reports';
-import { userApi, BackendUser } from '../services/userApi';
+import { apiGetAllReports, apiUpdateReportStatus, apiDeleteReport } from '../services/reports';
+import { userApi } from '../services/userApi';
+import { announcementApi } from '../services/announcementApi';
+import { User, UserProfile, BackendUser } from '../interfaces/user';
+import { Report } from '../interfaces/report';
+import { Announcement, UpdateAnnouncementData } from '../interfaces/announcement';
+import { DashboardContextType } from '../interfaces/dashboard';
 
-export interface Attachment {
-    url: string;
-    filename: string;
-    publicId: string;
-    format: string;
-}
 
-export interface LocationData {
-    text: string;
-    city?: string;
-    country?: string;
-    coordinates?: {
-        latitude: number;
-        longitude: number;
-    };
-}
+const INITIAL_REPORTS: Report[] = [];
 
-export interface UserProfile {
-    name: string;
-    email: string;
-    phone: string;
-    avatar?: string;
-}
-
-export interface User {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-    date: string;
-    time: string;
-    reports: number;
-    status: 'Active' | 'Pending' | 'Suspended';
-    role: 'admin' | 'user';
-    avatar?: string;
-    address?: string;
-    lastActive?: string;
-}
-
-export interface Report {
-    id: string;
-    title: string;
-    location: string;
-    name: string;
-    date: string;
-    time: string;
-    status: string;
-    category: string;
-    attachmentName?: string;
-    attachmentUrl?: string;
-    locationData?: LocationData;
-    coordinates?: {
-        latitude: number;
-        longitude: number;
-    };
-    reportType?: 'report' | 'announcement';
-    announcementId?: number;
-}
-
-export interface Announcement {
-    id: number;
-    title: string;
-    detail: string;
-    date: string;
-    time: string;
-    category: string;
-    status: string;
-    location?: LocationData;
-    attachments?: Attachment[];
-}
-
-interface DashboardContextType {
-    reports: Report[];
-    announcements: Announcement[];
-    users: User[];
-    userProfile: UserProfile;
-    addReport: (report: Omit<Report, 'id' | 'date' | 'time'>) => Report;
-    addAnnouncement: (announcement: Omit<Announcement, 'id' | 'date' | 'time'>) => Announcement;
-    updateReport: (id: string, updates: Partial<Report>) => void;
-    updateAnnouncement: (id: number, updates: Partial<Announcement>) => void;
-    deleteReport: (id: string) => void;
-    deleteAnnouncement: (id: number) => void;
-    updateUserProfile: (updates: Partial<UserProfile>) => void;
-    refreshData: () => Promise<void>;
-    refreshUsers: () => Promise<void>;
-    updateUser: (id: string, updates: Partial<User>) => Promise<void>;
-    deleteUser: (id: string) => Promise<void>;
-    isLoading: boolean;
-    isLoadingUsers: boolean;
-}
-
-const INITIAL_REPORTS: Report[] = [
-    {
-        id: '#dg6879',
-        title: 'Severe Flooding',
-        category: 'Floods',
-        location: 'Accra Central, Market sq.',
-        name: 'Ama Boateng',
-        date: 'Oct 24, 2026',
-        time: '13:28',
-        status: 'Confirmed',
-        locationData: { text: 'Accra Central, Market sq.', city: 'Accra', country: 'Ghana' }
-    },
-    {
-        id: '#dg3456',
-        title: 'Downed Powerline',
-        category: 'Others',
-        location: 'Kumasi, Kejetia Market sq.',
-        name: 'Ama Boateng',
-        date: 'Sep 23, 2026',
-        time: '20:22',
-        status: 'Active',
-        locationData: { text: 'Kumasi, Kejetia Market sq.', city: 'Kumasi', country: 'Ghana' }
-    },
-    {
-        id: '#dg1234',
-        title: 'Massive Potholes',
-        category: 'Others',
-        location: 'Accra Central, Market sq.',
-        name: 'Admin',
-        date: 'Aug 10, 2026',
-        time: '12:56',
-        status: 'Pending',
-        locationData: { text: 'Accra Central, Market sq.', city: 'Accra', country: 'Ghana' }
-    },
-    {
-        id: '#dg5678',
-        title: 'False Fire Alarm',
-        category: 'Wildfire',
-        location: 'Mole National Park',
-        name: 'Ama Boateng',
-        date: 'Jun 21, 2026',
-        time: '19:00',
-        status: 'Spam',
-        locationData: { text: 'Mole National Park', city: 'Mole', country: 'Ghana' }
-    },
-];
-
-const INITIAL_ANNOUNCEMENTS: Announcement[] = [
-    {
-        id: 1,
-        title: 'Flood warning: Volta region',
-        detail: 'Immediate precaution advised for all residents in the Volta region due to rising water levels.',
-        date: 'Oct 12, 2023',
-        time: '12:23 PM',
-        category: 'Alert',
-        status: 'Pinned',
-        location: { text: 'Volta Region, Ghana' }
-    },
-    {
-        id: 2,
-        title: 'New Reporting Guidelines',
-        detail: 'We have updated how you can report hazards to ensure faster response times.',
-        date: 'Oct 12, 2023',
-        time: '12:23 PM',
-        category: 'Info',
-        status: 'Active'
-    },
-    {
-        id: 3,
-        title: 'Scheduled Maintenance',
-        detail: 'System will be down for 2 hours for scheduled maintenance and upgrades.',
-        date: 'Oct 12, 2023',
-        time: '12:23 PM',
-        category: 'Update',
-        status: 'Archived'
-    },
-    {
-        id: 4,
-        title: 'Pothole repairs at Madina',
-        detail: 'Road blocked from Monday to Friday for pothole repairs. Use alternate routes.',
-        date: 'Oct 12, 2023',
-        time: '12:23 PM',
-        category: 'Info',
-        status: 'Active',
-        location: { text: 'Madina, Accra' }
-    },
-];
+const INITIAL_ANNOUNCEMENTS: Announcement[] = [];
 
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
 
@@ -218,15 +49,16 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [isLoadingUsers, setIsLoadingUsers] = useState<boolean>(false);
 
-    const refreshData = async () => {
+    const refreshData = useCallback(async () => {
         const token = localStorage.getItem("token");
         if (!token) return;
 
         setIsLoading(true);
         try {
-            const [reportsRes, profileRes] = await Promise.allSettled([
+            const [reportsRes, profileRes, announcementsRes] = await Promise.allSettled([
                 apiGetAllReports(),
-                apiGetAdminProfile()
+                apiGetAdminProfile(),
+                announcementApi.getAllAnnouncements()
             ]);
 
             if (reportsRes.status === 'fulfilled' && reportsRes.value.data?.hazardReports) {
@@ -245,23 +77,38 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
                 setReports(formattedReports);
             }
 
-            if (profileRes.status === 'fulfilled' && profileRes.value.data?.admin) {
-                const admin = profileRes.value.data.admin;
+            if (announcementsRes.status === 'fulfilled' && announcementsRes.value) {
+                const formattedAnnouncements: Announcement[] = announcementsRes.value.map((a: any, index: number) => ({
+                    id: a._id || a.id || index + 1,
+                    title: a.title,
+                    detail: a.detail,
+                    date: new Date(a.createdAt || a.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                    time: new Date(a.createdAt || a.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    category: a.category?.charAt(0).toUpperCase() + a.category?.slice(1) || 'Info',
+                    status: a.status || 'Active',
+                    location: a.location,
+                    attachments: a.attachments
+                }));
+                setAnnouncements(formattedAnnouncements);
+            }
+
+            if (profileRes.status === 'fulfilled' && profileRes.value.data) {
+                const admin = profileRes.value.data;
                 const newProfile = {
-                    name: admin.userName || "Admin User",
+                    name: admin.userName || admin.name || "Admin User",
                     email: admin.email || "",
-                    phone: admin.phoneNumber || "",
+                    phone: admin.phoneNumber || admin.phone || "",
                     avatar: admin.avatar ? (admin.avatar.startsWith('http') ? admin.avatar : `${baseUrl}/${admin.avatar}`) : "",
                 };
                 setUserProfile(newProfile);
-                localStorage.setItem("adminProfile", JSON.stringify(admin));
+                localStorage.setItem("adminProfile", JSON.stringify({ ...admin, ...newProfile }));
             }
         } catch (error) {
             console.error("Error refreshing dashboard data:", error);
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         const loadData = async () => {
@@ -287,7 +134,7 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
         return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
 
-    const addReport = (report: Omit<Report, 'id' | 'date' | 'time'>): Report => {
+    const addReport = useCallback((report: Omit<Report, 'id' | 'date' | 'time'>): Report => {
         const newReport: Report = {
             ...report,
             id: `#dg${Math.floor(1000 + Math.random() * 9000)}`,
@@ -296,9 +143,9 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
         };
         setReports(prev => [newReport, ...prev]);
         return newReport;
-    };
+    }, []);
 
-    const addAnnouncement = (announcement: Omit<Announcement, 'id' | 'date' | 'time'>): Announcement => {
+    const addAnnouncement = useCallback((announcement: Omit<Announcement, 'id' | 'date' | 'time'>): Announcement => {
         const newAnnouncement: Announcement = {
             ...announcement,
             id: Date.now(),
@@ -307,31 +154,73 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
         };
         setAnnouncements(prev => [newAnnouncement, ...prev]);
         return newAnnouncement;
-    };
+    }, []);
 
-    const updateReport = (id: string, updates: Partial<Report>) => {
-        setReports(prev => prev.map(report =>
-            report.id === id ? { ...report, ...updates } : report
-        ));
-    };
+    const updateReport = useCallback(async (id: string, updates: Partial<Report>) => {
+        try {
+            // Call API to update report status if status is being updated
+            if (updates.status) {
+                await apiUpdateReportStatus(id, updates.status);
+            }
+            // Update local state after successful API call
+            setReports(prev => prev.map(report =>
+                report.id === id ? { ...report, ...updates } : report
+            ));
+        } catch (error) {
+            console.error('Error updating report:', error);
+            throw error;
+        }
+    }, []);
 
-    const updateAnnouncement = (id: number, updates: Partial<Announcement>) => {
-        setAnnouncements(prev => prev.map(announcement =>
-            announcement.id === id ? { ...announcement, ...updates } : announcement
-        ));
-    };
+    const updateAnnouncement = useCallback(async (id: number, updates: Partial<Announcement>) => {
+        try {
+            // Convert updates to UpdateAnnouncementData format
+            const apiUpdates: UpdateAnnouncementData = {};
+            if (updates.title) apiUpdates.title = updates.title;
+            if (updates.detail) apiUpdates.detail = updates.detail;
+            if (updates.category) apiUpdates.category = updates.category as 'Alert' | 'Info' | 'Update';
+            if (updates.status) apiUpdates.status = updates.status as 'Pinned' | 'Active' | 'Archived';
+            if (updates.location) apiUpdates.location = updates.location;
 
-    const deleteReport = (id: string) => {
-        setReports(prev => prev.filter(report => report.id !== id));
-    };
+            // Call API to update announcement
+            await announcementApi.updateAnnouncement(String(id), apiUpdates);
+            // Update local state after successful API call
+            setAnnouncements(prev => prev.map(announcement =>
+                announcement.id === id ? { ...announcement, ...updates } : announcement
+            ));
+        } catch (error) {
+            console.error('Error updating announcement:', error);
+            throw error;
+        }
+    }, []);
 
-    const deleteAnnouncement = (id: number) => {
-        setAnnouncements(prev => prev.filter(announcement => announcement.id !== id));
-    };
+    const deleteReport = useCallback(async (id: string) => {
+        try {
+            // Call API to delete report
+            await apiDeleteReport(id);
+            // Update local state after successful API call
+            setReports(prev => prev.filter(report => report.id !== id));
+        } catch (error) {
+            console.error('Error deleting report:', error);
+            throw error;
+        }
+    }, []);
 
-    const updateUserProfile = (updates: Partial<UserProfile>) => {
+    const deleteAnnouncement = useCallback(async (id: number) => {
+        try {
+            // Call API to delete announcement
+            await announcementApi.deleteAnnouncement(String(id));
+            // Update local state after successful API call
+            setAnnouncements(prev => prev.filter(announcement => announcement.id !== id));
+        } catch (error) {
+            console.error('Error deleting announcement:', error);
+            throw error;
+        }
+    }, []);
+
+    const updateUserProfile = useCallback((updates: Partial<UserProfile>) => {
         setUserProfile(prev => ({ ...prev, ...updates }));
-    };
+    }, []);
 
     const mapBackendUser = (backendUser: BackendUser): User => {
         const createdAt = backendUser.createdAt ? new Date(backendUser.createdAt) : new Date();
@@ -361,7 +250,7 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
         };
     };
 
-    const refreshUsers = async () => {
+    const refreshUsers = useCallback(async () => {
         const token = localStorage.getItem("token");
         if (!token) return;
 
@@ -376,9 +265,9 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
         } finally {
             setIsLoadingUsers(false);
         }
-    };
+    }, []);
 
-    const updateUser = async (id: string, updates: Partial<User>) => {
+    const updateUser = useCallback(async (id: string, updates: Partial<User> & { avatar?: File }) => {
         try {
             const backendUpdates: Parameters<typeof userApi.updateUser>[1] = {};
             if (updates.name) backendUpdates.userName = updates.name;
@@ -388,6 +277,7 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
                 backendUpdates.isActive = updates.status !== 'Suspended';
                 backendUpdates.isVerified = updates.status !== 'Pending';
             }
+            if (updates.avatar) backendUpdates.avatar = updates.avatar;
 
             await userApi.updateUser(id, backendUpdates);
             await refreshUsers();
@@ -395,9 +285,9 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
             console.error("Error updating user:", error);
             throw error;
         }
-    };
+    }, [refreshUsers]);
 
-    const deleteUser = async (id: string) => {
+    const deleteUser = useCallback(async (id: string) => {
         try {
             await userApi.deleteUser(id);
             setUsers(prev => prev.filter(user => user.id !== id));
@@ -405,28 +295,31 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
             console.error("Error deleting user:", error);
             throw error;
         }
-    };
+    }, []);
+
+    // Memoize context value to prevent unnecessary re-renders
+    const contextValue = useMemo(() => ({
+        reports,
+        announcements,
+        users,
+        userProfile,
+        addReport,
+        addAnnouncement,
+        updateReport,
+        updateAnnouncement,
+        deleteReport,
+        deleteAnnouncement,
+        updateUserProfile,
+        refreshData,
+        refreshUsers,
+        updateUser,
+        deleteUser,
+        isLoading,
+        isLoadingUsers
+    }), [reports, announcements, users, userProfile, addReport, addAnnouncement, updateReport, updateAnnouncement, deleteReport, deleteAnnouncement, updateUserProfile, refreshData, refreshUsers, updateUser, deleteUser, isLoading, isLoadingUsers]);
 
     return (
-        <DashboardContext.Provider value={{
-            reports,
-            announcements,
-            users,
-            userProfile,
-            addReport,
-            addAnnouncement,
-            updateReport,
-            updateAnnouncement,
-            deleteReport,
-            deleteAnnouncement,
-            updateUserProfile,
-            refreshData,
-            refreshUsers,
-            updateUser,
-            deleteUser,
-            isLoading,
-            isLoadingUsers
-        }}>
+        <DashboardContext.Provider value={contextValue}>
             {children}
         </DashboardContext.Provider>
     );
