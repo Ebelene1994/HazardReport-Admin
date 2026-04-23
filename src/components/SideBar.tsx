@@ -68,18 +68,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, setIsOpen }) => {
       return;
     }
 
-    const firstAttachmentUrl = selectedFiles.length > 0 
-      ? URL.createObjectURL(selectedFiles[0]) 
-      : undefined;
-
     addReport({
       title: reportTitle,
       location: reportLocation || "Global",
-      status: "Confirmed",
-      category: reportCategory,
-      attachmentName: selectedFiles.length > 0 ? `${selectedFiles.length} file(s)` : undefined,
-      attachmentUrl: firstAttachmentUrl,
-      locationData: reportLocation ? { text: reportLocation } : undefined
+      hazardtype: reportCategory,
+      description: reportDescription,
+      city: "Unknown",
+      country: "Ghana"
     });
 
     addAnnouncement({
@@ -87,6 +82,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, setIsOpen }) => {
       detail: reportDescription || `New ${reportCategory} report submitted from ${reportLocation || "Global"}.`,
       category: "Info",
       status: "Active",
+      pinToFeed: false,
       location: reportLocation ? { text: reportLocation } : undefined
     });
 
