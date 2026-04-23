@@ -15,9 +15,14 @@ import {
 import toast from "react-hot-toast";
 import { useDashboard } from "../context/DashboardContext";
 
+interface SidebarProps {
+  isOpen?: boolean;
+  setIsOpen?: (isOpen: boolean) => void;
+}
+
 const categories = ['Floods', 'Earthquake', 'Fire', 'Wildfire', 'Landslide', 'Others'];
 
-const Sidebar: React.FC = () => {
+const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, setIsOpen }) => {
   const location = useLocation();
   const { addReport, addAnnouncement } = useDashboard();
   
@@ -103,11 +108,30 @@ const Sidebar: React.FC = () => {
 
   return (
     <>
-      <aside className="w-64 bg-white h-screen border-r border-gray-100 flex flex-col pt-6 pb-8 fixed left-0 top-0 overflow-y-auto">
-        <div className="px-8 mb-10">
-          <h1 className="text-2xl font-black text-brand-blue tracking-tight">
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setIsOpen?.(false)}
+        />
+      )}
+      
+      <aside className={`
+        fixed lg:static inset-y-0 left-0 z-50
+        w-64 bg-white h-screen border-r border-gray-100 flex flex-col pt-6 pb-8
+        transform transition-transform duration-300 ease-in-out
+        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
+        <div className="px-6 mb-8 flex items-center justify-between lg:justify-center">
+          <h1 className="text-xl sm:text-2xl font-black text-brand-blue tracking-tight">
             Gh-Hazard
           </h1>
+          <button 
+            onClick={() => setIsOpen?.(false)}
+            className="lg:hidden text-gray-400 hover:text-gray-600 p-1"
+          >
+            <FiX className="text-2xl" />
+          </button>
         </div>
 
         <nav className="flex-1 px-4 space-y-1">

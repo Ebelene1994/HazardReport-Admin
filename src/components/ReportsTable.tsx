@@ -164,7 +164,7 @@ const ReportsTable = () => {
     }
   };
 
-  const recentReports = reports.slice(0, 5);
+  const recentReports = reports.filter(r => r.reportType !== 'announcement').slice(0, 5);
 
   return (
     <div className="rounded-2xl bg-white p-5 shadow-sm">

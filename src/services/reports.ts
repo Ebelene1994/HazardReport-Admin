@@ -10,6 +10,16 @@ export interface CreateReportData {
   country: string;
 }
 
+export interface ReportStats {
+  totalReports: number;
+  totalReportsByHazardType: Record<string, number>;
+  totalReportsByStatus: Record<string, number>;
+  totalReportsByCity: Record<string, number>;
+  totalReportsByCountry: Record<string, number>;
+  reportsByMonth: Array<{ month: string; count: number }>;
+  topReporter: string;
+}
+
 export const apiGetAllReports = async (): Promise<AxiosResponse> => {
   try {
     return await apiClient.get("/api/admin/reports");
@@ -43,7 +53,7 @@ export const apiCreateReport = async (
       formData.append("images", file);
     });
 
-    return await apiClient.post("/api/hazard-report/create", formData, {
+    return await apiClient.post("/hazard/create", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -66,7 +76,7 @@ export const apiUpdateReportStatus = async (
 
 export const apiDeleteReport = async (id: string): Promise<AxiosResponse> => {
   try {
-    return await apiClient.delete(`/api/hazard-report/delete/${id}`);
+    return await apiClient.delete(`/hazard/delete/${id}`);
   } catch (error) {
     throw new Error(`Failed to delete report: ${error}`);
   }

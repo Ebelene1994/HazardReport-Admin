@@ -1,12 +1,12 @@
 import React, { createContext, ReactNode, useContext, useEffect, useState, useMemo, useCallback } from 'react';
-import { apiGetAdminProfile } from '../services/auth';
+import { apiGetAdminProfile, apiUpdateAdminProfile } from '../services/auth';
 import { baseUrl } from '../services/config';
-import { apiGetAllReports, apiUpdateReportStatus, apiDeleteReport } from '../services/reports';
+import { apiGetAllReports, apiUpdateReportStatus, apiDeleteReport, apiGetReportStats, apiCreateReport, ReportStats, CreateReportData } from '../services/reports';
 import { userApi } from '../services/userApi';
 import { announcementApi } from '../services/announcementApi';
 import { User, UserProfile, BackendUser } from '../interfaces/user';
 import { Report } from '../interfaces/report';
-import { Announcement, UpdateAnnouncementData } from '../interfaces/announcement';
+import { Announcement, CreateAnnouncementData, UpdateAnnouncementData } from '../interfaces/announcement';
 import { DashboardContextType } from '../interfaces/dashboard';
 
 
@@ -46,6 +46,7 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
     const [announcements, setAnnouncements] = useState<Announcement[]>(INITIAL_ANNOUNCEMENTS);
     const [users, setUsers] = useState<User[]>([]);
     const [userProfile, setUserProfile] = useState<UserProfile>(loadUserProfileFromStorage());
+    const [reportStats, setReportStats] = useState<ReportStats | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [isLoadingUsers, setIsLoadingUsers] = useState<boolean>(false);
 
@@ -55,10 +56,11 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
 
         setIsLoading(true);
         try {
-            const [reportsRes, profileRes, announcementsRes] = await Promise.allSettled([
+            const [reportsRes, profileRes, announcementsRes, statsRes] = await Promise.allSettled([
                 apiGetAllReports(),
                 apiGetAdminProfile(),
-                announcementApi.getAllAnnouncements()
+                announcementApi.getAllAnnouncements(),
+                apiGetReportStats()
             ]);
 
             if (reportsRes.status === 'fulfilled' && reportsRes.value.data?.hazardReports) {
@@ -72,7 +74,9 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
                     status: r.status,
                     category: r.hazardtype,
                     attachmentUrl: r.images && r.images.length > 0 ? (r.images[0].startsWith('http') ? r.images[0] : `${baseUrl}/${r.images[0]}`) : undefined,
-                    locationData: { text: r.location, city: r.city, country: r.country }
+                    locationData: { text: r.location, city: r.city, country: r.country },
+                    reportType: r.announcementId ? 'announcement' : 'report',
+                    announcementId: r.announcementId
                 }));
                 setReports(formattedReports);
             }
@@ -102,6 +106,10 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
                 };
                 setUserProfile(newProfile);
                 localStorage.setItem("adminProfile", JSON.stringify({ ...admin, ...newProfile }));
+            }
+
+            if (statsRes.status === 'fulfilled' && statsRes.value.data) {
+                setReportStats(statsRes.value.data);
             }
         } catch (error) {
             console.error("Error refreshing dashboard data:", error);
@@ -134,27 +142,48 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
         return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
 
-    const addReport = useCallback((report: Omit<Report, 'id' | 'date' | 'time'>): Report => {
-        const newReport: Report = {
-            ...report,
-            id: `#dg${Math.floor(1000 + Math.random() * 9000)}`,
-            date: generateDate(),
-            time: generateTime(),
-        };
-        setReports(prev => [newReport, ...prev]);
-        return newReport;
-    }, []);
+    const addReport = useCallback(async (report: CreateReportData & { images?: File[] }): Promise<Report> => {
+        try {
+            await apiCreateReport(report, report.images);
+            // Refresh to get the actual created report from backend
+            await refreshData();
+            return {
+                id: 'temp',
+                title: report.title,
+                location: report.location,
+                name: 'Admin',
+                date: generateDate(),
+                time: generateTime(),
+                status: 'open',
+                category: report.hazardtype
+            };
+        } catch (error) {
+            console.error('Error creating report:', error);
+            throw error;
+        }
+    }, [refreshData]);
 
-    const addAnnouncement = useCallback((announcement: Omit<Announcement, 'id' | 'date' | 'time'>): Announcement => {
-        const newAnnouncement: Announcement = {
-            ...announcement,
-            id: Date.now(),
-            date: generateDate(),
-            time: generateTime(),
-        };
-        setAnnouncements(prev => [newAnnouncement, ...prev]);
-        return newAnnouncement;
-    }, []);
+    const addAnnouncement = useCallback(async (announcement: CreateAnnouncementData & { attachments?: File[] }): Promise<Announcement> => {
+        try {
+            const created = await announcementApi.createAnnouncement(announcement, announcement.attachments || []);
+            // Refresh to get the actual data from backend
+            await refreshData();
+            return {
+                id: typeof created.id === 'string' ? parseInt(created.id) : (created.id || Date.now()),
+                title: created.title,
+                detail: created.detail,
+                date: generateDate(),
+                time: generateTime(),
+                category: created.category || announcement.category,
+                status: created.status || announcement.status,
+                location: created.location,
+                attachments: created.attachments
+            };
+        } catch (error) {
+            console.error('Error creating announcement:', error);
+            throw error;
+        }
+    }, [refreshData]);
 
     const updateReport = useCallback(async (id: string, updates: Partial<Report>) => {
         try {
@@ -218,8 +247,20 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
         }
     }, []);
 
-    const updateUserProfile = useCallback((updates: Partial<UserProfile>) => {
-        setUserProfile(prev => ({ ...prev, ...updates }));
+    const updateUserProfile = useCallback(async (updates: Partial<UserProfile> & { avatar?: File }) => {
+        try {
+            const formData = new FormData();
+            if (updates.name) formData.append('userName', updates.name);
+            if (updates.email) formData.append('email', updates.email);
+            if (updates.phone) formData.append('phoneNumber', updates.phone);
+            if (updates.avatar) formData.append('avatar', updates.avatar);
+
+            await apiUpdateAdminProfile(formData);
+            setUserProfile(prev => ({ ...prev, ...updates }));
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            throw error;
+        }
     }, []);
 
     const mapBackendUser = (backendUser: BackendUser): User => {
@@ -303,6 +344,7 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
         announcements,
         users,
         userProfile,
+        reportStats,
         addReport,
         addAnnouncement,
         updateReport,
@@ -316,7 +358,7 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
         deleteUser,
         isLoading,
         isLoadingUsers
-    }), [reports, announcements, users, userProfile, addReport, addAnnouncement, updateReport, updateAnnouncement, deleteReport, deleteAnnouncement, updateUserProfile, refreshData, refreshUsers, updateUser, deleteUser, isLoading, isLoadingUsers]);
+    }), [reports, announcements, users, userProfile, reportStats, addReport, addAnnouncement, updateReport, updateAnnouncement, deleteReport, deleteAnnouncement, updateUserProfile, refreshData, refreshUsers, updateUser, deleteUser, isLoading, isLoadingUsers]);
 
     return (
         <DashboardContext.Provider value={contextValue}>

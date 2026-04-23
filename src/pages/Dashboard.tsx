@@ -19,7 +19,7 @@ interface UploadedFile {
 }
 
 const Dashboard: React.FC = () => {
-  const { reports, users, addReport, addAnnouncement } = useDashboard();
+  const { reports, users, reportStats, addReport, addAnnouncement } = useDashboard();
   
   const [announcementText, setAnnouncementText] = useState("");
   const [pinToTop, setPinToTop] = useState(true);
@@ -309,7 +309,7 @@ const Dashboard: React.FC = () => {
             iconBgColor="#2563EB"
             iconColor="#FFFFFF"
             title="Total Reports"
-            value={reports.length.toLocaleString()}
+            value={reportStats?.totalReports?.toLocaleString() ?? reports.filter(r => r.reportType !== 'announcement').length.toLocaleString()}
             percentage="Live"
             isPositive={true}
           />
@@ -331,7 +331,7 @@ const Dashboard: React.FC = () => {
             iconBgColor="#EF4444"
             iconColor="#FFFFFF"
             title="Active Hazards"
-            value={reports.filter(r => r.status?.toLowerCase() === 'active' || r.status?.toLowerCase() === 'pending').length.toLocaleString()}
+            value={reportStats?.totalReportsByStatus?.open?.toLocaleString() ?? reports.filter(r => r.status?.toLowerCase() === 'active' || r.status?.toLowerCase() === 'pending').length.toLocaleString()}
             percentage="Pending"
             isPositive={true}
           />
@@ -342,7 +342,7 @@ const Dashboard: React.FC = () => {
             iconBgColor="#F59E0B"
             iconColor="#FFFFFF"
             title="Pending Moderation"
-            value={reports.filter(r => r.status?.toLowerCase() === 'pending').length.toLocaleString()}
+            value={reportStats?.totalReportsByStatus?.['in progress']?.toLocaleString() ?? reports.filter(r => r.status?.toLowerCase() === 'pending').length.toLocaleString()}
             percentage="Requires Action"
             isPositive={false}
           />
@@ -351,14 +351,14 @@ const Dashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center space-x-2">
-              <FiVolume2 className="text-brand-blue text-2xl" />
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center space-x-2">
+              <FiVolume2 className="text-brand-blue text-xl sm:text-2xl" />
               <span>Global Announcement System</span>
             </h2>
             
             <textarea
-              className="w-full bg-gray-50 border border-transparent rounded-lg p-4 h-40 focus:outline-none focus:ring-1 focus:ring-brand-blue resize-none mb-4"
+              className="w-full bg-gray-50 border border-transparent rounded-lg p-3 sm:p-4 h-32 sm:h-40 focus:outline-none focus:ring-1 focus:ring-brand-blue resize-none mb-4 text-sm"
               placeholder="Compose a flood alert or environmental warning..."
               value={announcementText}
               onChange={(e) => setAnnouncementText(e.target.value)}
@@ -699,9 +699,9 @@ const Dashboard: React.FC = () => {
             />
           </div>
           
-          <div className="bg-gray-50 rounded-lg p-5">
+          <div className="bg-gray-50 rounded-lg p-4 sm:p-5">
             <h3 className="text-xs font-bold text-gray-500 uppercase mb-3">Regional Hotspot</h3>
-            <ul className="space-y-3 font-medium text-sm">
+            <ul className="space-y-3 font-medium text-xs sm:text-sm">
               <li className="flex justify-between items-center">
                 <span className="text-gray-700">High</span>
                 <span className="text-red-500">Red</span>

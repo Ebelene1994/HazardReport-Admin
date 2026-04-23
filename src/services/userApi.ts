@@ -47,7 +47,7 @@ export const userApi = {
     if (data.avatar) formData.append('avatar', data.avatar);
     if (data.role) formData.append('role', data.role);
 
-    const response = await apiClient.patch('/api/users/', formData, {
+    const response = await apiClient.post('/api/users/create', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
