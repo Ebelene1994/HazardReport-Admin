@@ -3,6 +3,7 @@ import StatusBadge from "../components/StatusBadge";
 import ConfirmModal from "../components/ConfirmModal";
 import { FiVolume2, FiSearch, FiChevronDown, FiPaperclip, FiMapPin, FiX, FiFile, FiImage, FiFileText, FiVideo, FiEye, FiDownload, FiExternalLink, FiTrash, FiEdit, FiCheck, FiPlus } from "react-icons/fi";
 import toast from "react-hot-toast";
+import { FiCheck, FiChevronDown, FiDownload, FiEdit, FiExternalLink, FiEye, FiFile, FiFileText, FiImage, FiMapPin, FiPaperclip, FiPlus, FiSearch, FiTrash, FiVideo, FiVolume2, FiX } from "react-icons/fi";
 import adminDashboard from '../assets/images/adminDashboard.jpg';
 import { useDashboard } from "../context/DashboardContext";
 import { Announcement } from "../interfaces/announcement";
@@ -24,20 +25,20 @@ const Announcements: React.FC = () => {
   const [message, setMessage] = useState("");
   const [pinToTop, setPinToTop] = useState(false);
   const [pinToFeed, setPinToFeed] = useState(true);
-  
+
   const [showLocationInput, setShowLocationInput] = useState(false);
   const [locationData, setLocationData] = useState<LocationData>({ text: "" });
   const [showAttachmentPanel, setShowAttachmentPanel] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [categoryFilter, setCategoryFilter] = useState("All Categories");
   const [sortOrder, setSortOrder] = useState<"Newest" | "Oldest">("Newest");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
-  
+
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
   const [showViewModal, setShowViewModal] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
@@ -50,10 +51,10 @@ const Announcements: React.FC = () => {
   const filteredAnnouncements = useMemo(() => {
     const result = announcements.filter((item) => {
       const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          item.detail.toLowerCase().includes(searchQuery.toLowerCase());
+        item.detail.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === "All Status" || item.status === statusFilter;
-      const matchesCategory = categoryFilter === "All Categories" || 
-                            item.category.toLowerCase() === categoryFilter.toLowerCase();
+      const matchesCategory = categoryFilter === "All Categories" ||
+        item.category.toLowerCase() === categoryFilter.toLowerCase();
       return matchesSearch && matchesStatus && matchesCategory;
     });
 
@@ -93,9 +94,9 @@ const Announcements: React.FC = () => {
       const newFiles = Array.from(e.target.files);
       const validFiles = newFiles.filter(file => {
         const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
-                          'application/pdf', 'application/msword', 
-                          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                          'video/mp4', 'video/quicktime', 'video/avi', 'video/webm'];
+          'application/pdf', 'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'video/mp4', 'video/quicktime', 'video/avi', 'video/webm'];
         if (!validTypes.includes(file.type)) {
           toast.error(`Invalid file type: ${file.name}`);
           return false;
@@ -106,13 +107,13 @@ const Announcements: React.FC = () => {
         }
         return true;
       });
-      
+
       const newUploadedFiles: UploadedFile[] = validFiles.map(file => ({
         file,
         progress: 0,
         status: 'pending'
       }));
-      
+
       setUploadedFiles(prev => [...prev, ...newUploadedFiles]);
       setShowAttachmentPanel(true);
     }
@@ -241,19 +242,18 @@ const Announcements: React.FC = () => {
               onChange={(e) => setTitle(e.target.value)}
             />
           </div>
-          
+
           <div className="md:col-span-1">
             <label className="block text-sm font-bold text-gray-900 mb-2">Category</label>
             <div className="flex space-x-2">
               {(['Alert', 'Info', 'Update'] as const).map((cat) => (
-                <button 
+                <button
                   key={cat}
                   onClick={() => setCategory(cat)}
-                  className={`flex-1 py-3 text-sm font-medium rounded-lg transition-all border ${
-                    category === cat 
-                      ? 'border-brand-blue text-brand-blue bg-blue-50 shadow-sm' 
+                  className={`flex-1 py-3 text-sm font-medium rounded-lg transition-all border ${category === cat
+                      ? 'border-brand-blue text-brand-blue bg-blue-50 shadow-sm'
                       : 'border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300'
-                  }`}
+                    }`}
                 >
                   {cat}
                 </button>
@@ -271,9 +271,9 @@ const Announcements: React.FC = () => {
                 </div>
               </div>
               <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
-                <input 
-                  type="checkbox" 
-                  id="toggle-pin" 
+                <input
+                  type="checkbox"
+                  id="toggle-pin"
                   className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 border-gray-200 appearance-none cursor-pointer top-0 bottom-0 m-auto"
                   checked={pinToTop}
                   onChange={(e) => setPinToTop(e.target.checked)}
@@ -303,8 +303,8 @@ const Announcements: React.FC = () => {
                 </div>
                 <span className="text-sm font-bold text-blue-700">Location Tagging</span>
               </div>
-              <button 
-                onClick={() => { setShowLocationInput(false); setLocationData({ text: "" }); }} 
+              <button
+                onClick={() => { setShowLocationInput(false); setLocationData({ text: "" }); }}
                 className="text-blue-400 hover:text-blue-600"
               >
                 <FiX />
@@ -344,7 +344,7 @@ const Announcements: React.FC = () => {
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <button 
+                <button
                   onClick={() => fileInputRef.current?.click()}
                   className="text-xs text-purple-600 hover:text-purple-800 font-medium flex items-center gap-1"
                 >
@@ -360,9 +360,9 @@ const Announcements: React.FC = () => {
                 <div key={index} className="flex items-center gap-3 bg-white rounded-lg p-2 shadow-sm">
                   <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
                     {uploadedFile.file.type.startsWith('image/') ? (
-                      <img 
-                        src={URL.createObjectURL(uploadedFile.file)} 
-                        alt="" 
+                      <img
+                        src={URL.createObjectURL(uploadedFile.file)}
+                        alt=""
                         className="w-full h-full object-cover"
                       />
                     ) : (
@@ -377,7 +377,7 @@ const Announcements: React.FC = () => {
                     {uploadedFile.status === 'uploading' && (
                       <div className="flex items-center gap-1">
                         <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                          <div 
+                          <div
                             className="h-full bg-purple-500 transition-all duration-300"
                             style={{ width: `${uploadedFile.progress}%` }}
                           />
@@ -416,15 +416,15 @@ const Announcements: React.FC = () => {
         <div className="flex justify-between items-center flex-wrap gap-3 pt-2">
           <div className="flex items-center flex-wrap gap-3">
             <label className="flex items-center space-x-2 text-sm font-bold text-gray-900 cursor-pointer">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 className="form-checkbox text-brand-blue rounded h-4 w-4 border-gray-300"
                 checked={pinToFeed}
                 onChange={(e) => setPinToFeed(e.target.checked)}
               />
               <span>Pin to top of public feed</span>
             </label>
-            <button 
+            <button
               onClick={() => {
                 if (uploadedFiles.length > 0) {
                   setShowAttachmentPanel(!showAttachmentPanel);
@@ -432,11 +432,10 @@ const Announcements: React.FC = () => {
                   fileInputRef.current?.click();
                 }
               }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
-                showAttachmentPanel || uploadedFiles.length > 0
-                  ? 'bg-purple-100 text-purple-700' 
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${showAttachmentPanel || uploadedFiles.length > 0
+                  ? 'bg-purple-100 text-purple-700'
                   : 'text-gray-400 hover:text-purple-600 hover:bg-purple-50'
-              }`}
+                }`}
             >
               <FiPaperclip />
               <span className="text-sm">Attachments</span>
@@ -444,7 +443,7 @@ const Announcements: React.FC = () => {
                 <span className="bg-purple-500 text-white text-xs px-1.5 py-0.5 rounded-full">{uploadedFiles.length}</span>
               )}
             </button>
-            <button 
+            <button
               onClick={() => {
                 if (locationData.text || showLocationInput) {
                   setShowLocationInput(!showLocationInput);
@@ -452,17 +451,16 @@ const Announcements: React.FC = () => {
                   setShowLocationInput(true);
                 }
               }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
-                locationData.text 
-                  ? 'bg-blue-100 text-blue-700' 
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${locationData.text
+                  ? 'bg-blue-100 text-blue-700'
                   : 'text-gray-400 hover:text-brand-blue hover:bg-blue-50'
-              }`}
+                }`}
             >
               <FiMapPin />
               <span className="text-sm">Location</span>
             </button>
           </div>
-          <button 
+          <button
             onClick={handlePostAnnouncement}
             disabled={isUploading}
             className="bg-gradient-to-r from-brand-blue to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium py-2.5 px-8 rounded-lg shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all hover:shadow-lg"
@@ -498,7 +496,7 @@ const Announcements: React.FC = () => {
           </div>
           <div className="flex items-center flex-wrap gap-3">
             <div className="relative">
-              <select 
+              <select
                 className="appearance-none bg-white border border-gray-200 text-gray-700 pl-4 pr-10 py-2 rounded-lg text-sm hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-blue cursor-pointer"
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
@@ -511,7 +509,7 @@ const Announcements: React.FC = () => {
               <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
             </div>
             <div className="relative">
-              <select 
+              <select
                 className="appearance-none bg-white border border-gray-200 text-gray-700 pl-4 pr-10 py-2 rounded-lg text-sm hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-blue cursor-pointer"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -524,7 +522,7 @@ const Announcements: React.FC = () => {
               <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
             </div>
             <div className="relative">
-              <select 
+              <select
                 className="appearance-none bg-white border border-gray-200 text-gray-700 pl-4 pr-10 py-2 rounded-lg text-sm hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-blue cursor-pointer"
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value as "Newest" | "Oldest")}
@@ -534,7 +532,7 @@ const Announcements: React.FC = () => {
               </select>
               <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
             </div>
-            <button 
+            <button
               onClick={clearFilters}
               className="text-brand-blue text-sm font-medium hover:underline whitespace-nowrap"
             >
@@ -562,9 +560,9 @@ const Announcements: React.FC = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-4">
                       {row.attachments && row.attachments.length > 0 ? (
-                        <img 
-                          src={row.attachments[0].url} 
-                          alt="" 
+                        <img
+                          src={row.attachments[0].url}
+                          alt=""
                           className="w-10 h-10 rounded-lg object-cover border-2 border-brand-blue"
                         />
                       ) : (
@@ -608,7 +606,7 @@ const Announcements: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button 
+                      <button
                         onClick={() => openViewModal(row)}
                         className="text-brand-blue hover:text-blue-700 flex items-center gap-1 px-2 py-1 rounded hover:bg-blue-50 transition-colors"
                         title="View Details"
@@ -616,7 +614,7 @@ const Announcements: React.FC = () => {
                         <FiEye />
                         <span className="text-sm">View</span>
                       </button>
-                      <button 
+                      <button
                         onClick={() => openEditModal(row)}
                         className="text-green-600 hover:text-green-700 flex items-center gap-1 px-2 py-1 rounded hover:bg-green-50 transition-colors"
                         title="Edit"
@@ -624,7 +622,7 @@ const Announcements: React.FC = () => {
                         <FiEdit />
                         <span className="text-sm">Edit</span>
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleDeleteAnnouncement(row.id)}
                         className="text-red-500 hover:text-red-700 flex items-center gap-1 px-2 py-1 rounded hover:bg-red-50 transition-colors"
                         title="Delete"
@@ -649,7 +647,7 @@ const Announcements: React.FC = () => {
               )}
             </tbody>
           </table>
-          
+
           {filteredAnnouncements.length > 0 && (
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
               <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -662,9 +660,9 @@ const Announcements: React.FC = () => {
                 <span>of</span>
                 <span className="font-bold text-gray-700">{totalPages}</span>
               </div>
-              
+
               <div className="flex items-center gap-2">
-                <button 
+                <button
                   onClick={() => setCurrentPage(1)}
                   disabled={currentPage === 1}
                   className="px-2 py-1.5 border border-gray-200 rounded-lg text-gray-500 text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -672,7 +670,7 @@ const Announcements: React.FC = () => {
                 >
                   ««
                 </button>
-                <button 
+                <button
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
                   className="px-3 py-1.5 border border-gray-200 rounded-lg text-gray-500 text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
@@ -683,19 +681,18 @@ const Announcements: React.FC = () => {
                   {Array.from({ length: totalPages }).map((_, idx) => {
                     const pageNum = idx + 1;
                     if (
-                      pageNum === 1 || 
-                      pageNum === totalPages || 
+                      pageNum === 1 ||
+                      pageNum === totalPages ||
                       (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
                     ) {
                       return (
                         <button
                           key={idx}
                           onClick={() => setCurrentPage(pageNum)}
-                          className={`min-w-[32px] h-8 px-2 rounded-lg text-sm font-medium transition-colors ${
-                            currentPage === pageNum 
-                              ? 'bg-brand-blue text-white shadow-md' 
+                          className={`min-w-[32px] h-8 px-2 rounded-lg text-sm font-medium transition-colors ${currentPage === pageNum
+                              ? 'bg-brand-blue text-white shadow-md'
                               : 'border border-gray-200 text-gray-500 hover:bg-gray-50'
-                          }`}
+                            }`}
                         >
                           {pageNum}
                         </button>
@@ -706,14 +703,14 @@ const Announcements: React.FC = () => {
                     return null;
                   })}
                 </div>
-                <button 
+                <button
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
                   className="px-3 py-1.5 border border-gray-200 rounded-lg text-gray-500 text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
                 >
                   Next ›
                 </button>
-                <button 
+                <button
                   onClick={() => setCurrentPage(totalPages)}
                   disabled={currentPage === totalPages}
                   className="px-2 py-1.5 border border-gray-200 rounded-lg text-gray-500 text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -721,7 +718,7 @@ const Announcements: React.FC = () => {
                 >
                   »»
                 </button>
-                
+
                 <div className="flex items-center gap-2 ml-4 border-l border-gray-200 pl-4">
                   <span className="text-sm text-gray-500">Go to:</span>
                   <input
@@ -750,7 +747,7 @@ const Announcements: React.FC = () => {
             <div className="p-6 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
               <h3 className="text-lg font-bold text-gray-900">Announcement Details</h3>
               <div className="flex items-center gap-2">
-                <button 
+                <button
                   onClick={() => openEditModal(selectedAnnouncement)}
                   className="text-green-600 hover:text-green-700 flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-green-50 transition-colors"
                 >
@@ -766,15 +763,15 @@ const Announcements: React.FC = () => {
                 <StatusBadge status={selectedAnnouncement.category} />
                 <StatusBadge status={selectedAnnouncement.status} />
               </div>
-              
+
               <h2 className="text-xl font-bold text-gray-900">{selectedAnnouncement.title}</h2>
-              
+
               <div className="flex items-center gap-4 text-sm text-gray-500">
                 <span>{selectedAnnouncement.date}</span>
                 <span>•</span>
                 <span>{selectedAnnouncement.time}</span>
               </div>
-              
+
               {selectedAnnouncement.location?.text && (
                 <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-100 rounded-xl p-4">
                   <h4 className="text-sm font-bold text-blue-800 mb-2 flex items-center gap-2">
@@ -786,9 +783,9 @@ const Announcements: React.FC = () => {
                   <p className="font-medium text-gray-800">{selectedAnnouncement.location.text}</p>
                 </div>
               )}
-              
+
               <p className="text-gray-700 whitespace-pre-wrap leading-relaxed bg-gray-50 p-4 rounded-lg">{selectedAnnouncement.detail}</p>
-              
+
               {selectedAnnouncement.attachments && selectedAnnouncement.attachments.length > 0 && (
                 <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-100 rounded-xl p-4">
                   <h4 className="text-sm font-bold text-purple-800 mb-3 flex items-center gap-2">
@@ -802,13 +799,13 @@ const Announcements: React.FC = () => {
                       <div key={idx} className="bg-white rounded-xl overflow-hidden shadow-sm group">
                         {att.format && ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(att.format.toLowerCase()) ? (
                           <div className="relative">
-                            <img 
-                              src={att.url} 
+                            <img
+                              src={att.url}
                               alt={att.filename}
                               className="w-full h-32 object-cover"
                             />
                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                              <a 
+                              <a
                                 href={att.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
@@ -817,7 +814,7 @@ const Announcements: React.FC = () => {
                               >
                                 <FiExternalLink className="text-gray-700" />
                               </a>
-                              <a 
+                              <a
                                 href={att.url}
                                 download={att.filename}
                                 className="bg-white p-2 rounded-full hover:bg-gray-100 transition-colors"
@@ -843,14 +840,14 @@ const Announcements: React.FC = () => {
               )}
 
               <div className="flex justify-between items-center pt-4 border-t border-gray-100">
-                <button 
+                <button
                   onClick={() => handleDeleteAnnouncement(selectedAnnouncement.id)}
                   className="flex items-center gap-2 px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                 >
                   <FiTrash />
                   <span>Delete Announcement</span>
                 </button>
-                <button 
+                <button
                   onClick={() => setShowViewModal(false)}
                   className="px-6 py-2 bg-brand-blue text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
                 >
@@ -917,13 +914,13 @@ const Announcements: React.FC = () => {
               </div>
             </div>
             <div className="p-4 border-t border-gray-100 flex justify-end gap-3">
-              <button 
+              <button
                 onClick={() => setShowEditModal(false)}
                 className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleUpdateAnnouncement}
                 className="px-6 py-2 bg-brand-blue text-white rounded-lg hover:bg-blue-700 font-medium flex items-center gap-2"
               >
