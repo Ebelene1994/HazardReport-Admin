@@ -109,7 +109,31 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
             }
 
             if (statsRes.status === 'fulfilled' && statsRes.value.data) {
-                setReportStats(statsRes.value.data);
+                const statsData = statsRes.value.data.stats || statsRes.value.data;
+                // Transform backend stats to match frontend interface
+                const formattedStats = {
+                    totalReports: statsData.totalReports,
+                    totalReportsByHazardType: statsData.reportsByHazardType || {},
+                    totalReportsByStatus: statsData.reportsByStatus ? 
+                        statsData.reportsByStatus.reduce((acc: any, item: any) => {
+                            acc[item._id] = item.count;
+                            return acc;
+                        }, {}) : {},
+                    totalReportsByCity: statsData.reportsByCity ? 
+                        statsData.reportsByCity.reduce((acc: any, item: any) => {
+                            acc[item._id] = item.count;
+                            return acc;
+                        }, {}) : {},
+                    totalReportsByCountry: statsData.reportsByCountry ? 
+                        statsData.reportsByCountry.reduce((acc: any, item: any) => {
+                            acc[item._id] = item.count;
+                            return acc;
+                        }, {}) : {},
+                    reportsByMonth: statsData.reportsByMonth || [],
+                    topReporter: statsData.reportsByUser && statsData.reportsByUser.length > 0 ? 
+                        statsData.reportsByUser[0].userDetails?.userName || 'Unknown' : 'Unknown'
+                };
+                setReportStats(formattedStats);
             }
         } catch (error) {
             console.error("Error refreshing dashboard data:", error);
@@ -195,11 +219,13 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
             setReports(prev => prev.map(report =>
                 report.id === id ? { ...report, ...updates } : report
             ));
+            // Refresh data to ensure stats are updated across all views
+            await refreshData();
         } catch (error) {
             console.error('Error updating report:', error);
             throw error;
         }
-    }, []);
+    }, [refreshData]);
 
     const updateAnnouncement = useCallback(async (id: number, updates: Partial<Announcement>) => {
         try {
@@ -229,11 +255,13 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
             await apiDeleteReport(id);
             // Update local state after successful API call
             setReports(prev => prev.filter(report => report.id !== id));
+            // Refresh data to ensure stats are updated across all views
+            await refreshData();
         } catch (error) {
             console.error('Error deleting report:', error);
             throw error;
         }
-    }, []);
+    }, [refreshData]);
 
     const deleteAnnouncement = useCallback(async (id: number) => {
         try {
@@ -247,7 +275,7 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
         }
     }, []);
 
-    const updateUserProfile = useCallback(async (updates: Partial<UserProfile> & { avatar?: File }) => {
+    const updateUserProfile = useCallback(async (updates: Omit<Partial<UserProfile>, 'avatar'> & { avatar?: File }) => {
         try {
             const formData = new FormData();
             if (updates.name) formData.append('userName', updates.name);
@@ -255,8 +283,21 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
             if (updates.phone) formData.append('phoneNumber', updates.phone);
             if (updates.avatar) formData.append('avatar', updates.avatar);
 
-            await apiUpdateAdminProfile(formData);
-            setUserProfile(prev => ({ ...prev, ...updates }));
+            const response = await apiUpdateAdminProfile(formData);
+            // Refresh profile from backend response to get updated avatar URL from Cloudinary
+            const updatedUser = response.data?.user;
+            if (updatedUser) {
+                const newProfile: UserProfile = {
+                    name: updatedUser.userName || updates.name || '',
+                    email: updatedUser.email || updates.email || '',
+                    phone: updatedUser.phoneNumber || updates.phone || '',
+                    avatar: updatedUser.avatar ? (updatedUser.avatar.startsWith('http') ? updatedUser.avatar : `${baseUrl}/${updatedUser.avatar}`) : '',
+                };
+                setUserProfile(newProfile);
+                localStorage.setItem("adminProfile", JSON.stringify({ ...updatedUser, ...newProfile }));
+            } else {
+                setUserProfile(prev => ({ ...prev, ...updates, avatar: updates.avatar ? undefined : prev.avatar }));
+            }
         } catch (error) {
             console.error('Error updating profile:', error);
             throw error;
@@ -331,12 +372,12 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
     const deleteUser = useCallback(async (id: string) => {
         try {
             await userApi.deleteUser(id);
-            setUsers(prev => prev.filter(user => user.id !== id));
+            await refreshUsers();
         } catch (error) {
             console.error("Error deleting user:", error);
             throw error;
         }
-    }, []);
+    }, [refreshUsers]);
 
     // Memoize context value to prevent unnecessary re-renders
     const contextValue = useMemo(() => ({

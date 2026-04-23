@@ -6,8 +6,7 @@ import toast from "react-hot-toast";
 import adminDashboard from '../assets/images/adminDashboard.jpg';
 import { useDashboard } from "../context/DashboardContext";
 import { Announcement } from "../interfaces/announcement";
-import { Attachment, LocationData } from "../interfaces/attachment";
-import { announcementApi } from "../services/announcementApi";
+import { LocationData } from "../interfaces/attachment";
 
 interface UploadedFile {
   file: File;
@@ -120,37 +119,6 @@ const Announcements: React.FC = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const simulateUploadProgress = async (index: number) => {
-    return new Promise<void>((resolve) => {
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += Math.random() * 30;
-        if (progress >= 100) {
-          progress = 100;
-          clearInterval(interval);
-          setUploadedFiles(prev => prev.map((f, i) => 
-            i === index ? { ...f, progress: 100, status: 'uploaded' } : f
-          ));
-          resolve();
-        } else {
-          setUploadedFiles(prev => prev.map((f, i) => 
-            i === index ? { ...f, progress, status: 'uploading' } : f
-          ));
-        }
-      }, 200);
-    });
-  };
-
-  const uploadFiles = async () => {
-    const pendingFiles = uploadedFiles.filter(f => f.status === 'pending');
-    for (let i = 0; i < pendingFiles.length; i++) {
-      const originalIndex = uploadedFiles.findIndex(f => f.file === pendingFiles[i].file && f.status === 'pending');
-      if (originalIndex !== -1) {
-        await simulateUploadProgress(originalIndex);
-      }
-    }
-  };
-
   const removeFile = (index: number) => {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
@@ -162,44 +130,16 @@ const Announcements: React.FC = () => {
     }
 
     setIsUploading(true);
-    
-    try {
-      let uploadedAttachments: Attachment[] = [];
-      
-      if (uploadedFiles.length > 0) {
-        await uploadFiles();
-        
-        try {
-          const response = await announcementApi.createAnnouncement(
-            {
-              title,
-              detail: message,
-              category,
-              status: pinToTop ? "Pinned" : "Active",
-              pinToFeed,
-              location: locationData.text ? locationData : undefined
-            },
-            uploadedFiles.map(f => f.file)
-          );
-          uploadedAttachments = response.attachments || [];
-        } catch (apiError) {
-          console.log('API upload failed, using local URLs:', apiError);
-          uploadedAttachments = uploadedFiles.map(f => ({
-            url: URL.createObjectURL(f.file),
-            filename: f.file.name,
-            publicId: `local_${Date.now()}`,
-            format: f.file.name.split('.').pop() || ''
-          }));
-        }
-      }
 
-      addAnnouncement({
+    try {
+      await addAnnouncement({
         title,
         detail: message,
-        category: category.toLowerCase(),
+        category,
         status: pinToTop ? "Pinned" : "Active",
+        pinToFeed,
         location: locationData.text ? locationData : undefined,
-        attachments: uploadedAttachments.length > 0 ? uploadedAttachments : undefined
+        attachments: uploadedFiles.length > 0 ? uploadedFiles.map(f => f.file) : undefined
       });
 
       toast.success("Announcement posted successfully!");

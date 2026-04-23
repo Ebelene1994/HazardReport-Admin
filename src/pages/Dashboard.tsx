@@ -43,6 +43,10 @@ const Dashboard: React.FC = () => {
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
   const newReportFileRef = useRef<HTMLInputElement>(null);
 
+  // Recent Reports Moderation pagination
+  const [recentReportsPage, setRecentReportsPage] = useState(1);
+  const recentReportsItemsPerPage = 5;
+
   const getFileIcon = (filename: string) => {
     const ext = filename.split('.').pop()?.toLowerCase();
     if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext || '')) return <FiImage className="text-green-500" />;
@@ -603,7 +607,7 @@ const Dashboard: React.FC = () => {
                 View all reports &rarr;
               </Link>
             </div>
-            
+
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left text-gray-500">
                 <thead className="text-xs text-gray-400 uppercase bg-transparent border-b border-gray-100">
@@ -617,7 +621,9 @@ const Dashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {reports.filter(r => r.reportType !== 'announcement').slice(0, 5).map((row) => (
+                  {reports.filter(r => r.reportType !== 'announcement')
+                    .slice((recentReportsPage - 1) * recentReportsItemsPerPage, recentReportsPage * recentReportsItemsPerPage)
+                    .map((row) => (
                     <tr key={row.id} className="border-b border-gray-50 last:border-none hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-4">
                         <div className="flex flex-col">
@@ -685,6 +691,43 @@ const Dashboard: React.FC = () => {
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            <div className="flex items-center justify-between mt-6">
+              <span className="text-sm text-gray-500 font-medium">
+                Showing {Math.min(recentReportsItemsPerPage, reports.filter(r => r.reportType !== 'announcement').length - (recentReportsPage - 1) * recentReportsItemsPerPage)} of {reports.filter(r => r.reportType !== 'announcement').length} reports
+              </span>
+              <div className="flex space-x-1">
+                <button
+                  onClick={() => setRecentReportsPage(p => Math.max(1, p - 1))}
+                  disabled={recentReportsPage === 1}
+                  className="px-3 py-1 border border-gray-200 rounded text-gray-500 text-sm hover:bg-gray-50 disabled:opacity-50 transition-colors cursor-pointer"
+                >
+                  Previous
+                </button>
+                <div className="flex space-x-1 mx-1">
+                  {Array.from({ length: Math.ceil(reports.filter(r => r.reportType !== 'announcement').length / recentReportsItemsPerPage) }).map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setRecentReportsPage(idx + 1)}
+                      className={`px-3 py-1 rounded text-sm font-medium transition-colors cursor-pointer ${
+                        recentReportsPage === idx + 1
+                          ? 'bg-brand-blue text-white'
+                          : 'border border-gray-200 text-gray-500 hover:bg-gray-50'
+                      }`}
+                    >
+                      {idx + 1}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => setRecentReportsPage(p => Math.min(Math.ceil(reports.filter(r => r.reportType !== 'announcement').length / recentReportsItemsPerPage), p + 1))}
+                  disabled={recentReportsPage === Math.ceil(reports.filter(r => r.reportType !== 'announcement').length / recentReportsItemsPerPage)}
+                  className="px-3 py-1 border border-gray-200 rounded text-gray-500 text-sm hover:bg-gray-50 disabled:opacity-50 transition-colors cursor-pointer"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           </div>
         </div>

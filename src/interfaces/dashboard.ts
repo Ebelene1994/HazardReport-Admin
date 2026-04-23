@@ -16,7 +16,7 @@ export interface DashboardContextType {
     updateAnnouncement: (id: number, updates: Partial<Announcement>) => void;
     deleteReport: (id: string) => void;
     deleteAnnouncement: (id: number) => void;
-    updateUserProfile: (updates: Partial<UserProfile> & { avatar?: File }) => Promise<void>;
+    updateUserProfile: (updates: Omit<Partial<UserProfile>, 'avatar'> & { avatar?: File }) => Promise<void>;
     refreshData: () => Promise<void>;
     refreshUsers: () => Promise<void>;
     updateUser: (id: string, updates: Partial<User> & { avatar?: File }) => Promise<void>;

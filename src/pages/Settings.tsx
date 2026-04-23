@@ -3,7 +3,6 @@ import { FiMail, FiMessageSquare, FiBell, FiShield, FiSmartphone, FiMonitor, FiM
 import toast from "react-hot-toast";
 import adminDashboard from '../assets/images/adminDashboard.jpg';
 import { useDashboard } from "../context/DashboardContext";
-import { apiUpdateAdminProfile } from "../services/auth";
 
 const Settings: React.FC = () => {
   const { userProfile, updateUserProfile } = useDashboard();
@@ -58,28 +57,14 @@ const Settings: React.FC = () => {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const formData = new FormData();
-      formData.append("userName", profile.name); // Using userName as name field for backend
-      formData.append("email", profile.email);
-      formData.append("phoneNumber", profile.phone);
-      if (selectedFile) {
-        formData.append("avatar", selectedFile);
-      }
+      const updates: Partial<UserProfile> = {
+        name: profile.name,
+        email: profile.email,
+        phone: profile.phone,
+      };
 
-      const response = await apiUpdateAdminProfile(formData);
-      if (response.status === 200) {
-        const updatedUser = response.data?.user || response.data;
-        const updatedProfile = {
-          name: profile.name,
-          email: profile.email,
-          phone: profile.phone,
-          avatar: updatedUser?.avatar || profileImage || undefined
-        };
-        updateUserProfile(updatedProfile);
-        // Update localStorage to persist changes across reloads
-        localStorage.setItem("adminProfile", JSON.stringify({ ...updatedUser, ...updatedProfile }));
-        toast.success("Settings saved successfully!");
-      }
+      await updateUserProfile({ ...updates, avatar: selectedFile || undefined });
+      toast.success("Settings saved successfully!");
     } catch (error: any) {
       toast.error(error.message || "Failed to save settings");
     } finally {
