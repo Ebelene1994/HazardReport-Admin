@@ -6,7 +6,7 @@ import { FiHome, FiUsers, FiAlertOctagon, FiPercent, FiPaperclip, FiMapPin, FiMa
 import toast from "react-hot-toast";
 import ghMap from "../assets/images/map_GH.png";
 import { useDashboard } from "../context/DashboardContext";
-import { LocationData, Attachment } from "../interfaces/attachment";
+import { LocationData } from "../interfaces/attachment";
 import { announcementApi } from "../services/announcementApi";
 import { apiCreateReport, CreateReportData } from "../services/reports";
 
@@ -138,14 +138,12 @@ const Dashboard: React.FC = () => {
     
     try {
       const announcementTitle = "Quick Alert: " + announcementText.substring(0, 30) + (announcementText.length > 30 ? "..." : "");
-      
-      let uploadedAttachments: Attachment[] = [];
-      
+
       if (uploadedFiles.length > 0) {
         await uploadFilesToCloudinary();
         
         try {
-          const response = await announcementApi.createAnnouncement(
+          await announcementApi.createAnnouncement(
             {
               title: announcementTitle,
               detail: announcementText,
@@ -156,43 +154,27 @@ const Dashboard: React.FC = () => {
             },
             uploadedFiles.map(f => f.file)
           );
-          uploadedAttachments = response.attachments || [];
         } catch (apiError) {
           console.log('API upload failed, using local URLs:', apiError);
-          uploadedAttachments = uploadedFiles.map(f => ({
-            url: URL.createObjectURL(f.file),
-            filename: f.file.name,
-            publicId: `local_${Date.now()}`,
-            format: f.file.name.split('.').pop() || ''
-          }));
         }
       }
 
-      const newAnnouncement = addAnnouncement({
+      addAnnouncement({
         title: announcementTitle,
         detail: announcementText,
-        category: "alert",
+        category: "Alert",
         status: pinToTop ? "Pinned" : "Active",
-        location: locationData.text ? locationData : undefined,
-        attachments: uploadedAttachments.length > 0 ? uploadedAttachments : undefined
+        pinToFeed: pinToTop,
+        location: locationData.text ? locationData : undefined
       });
 
-      const firstAttachmentUrl = uploadedAttachments.length > 0 ? uploadedAttachments[0].url : undefined;
-      const attachmentNames = uploadedAttachments.length > 0 
-        ? uploadedAttachments.map(a => a.filename).join(', ')
-        : undefined;
-      
       addReport({
         title: announcementText.substring(0, 40) + (announcementText.length > 40 ? "..." : ""),
+        hazardtype: "Alert",
+        description: announcementText,
         location: locationData.text || "Global",
-        name: "Admin System",
-        status: "Confirmed",
-        category: "Alert",
-        reportType: 'announcement',
-        attachmentName: attachmentNames,
-        attachmentUrl: firstAttachmentUrl,
-        locationData: locationData.text ? locationData : undefined,
-        announcementId: newAnnouncement?.id
+        city: "Accra",
+        country: "Ghana"
       });
 
       toast.success("Alert posted successfully");
@@ -285,12 +267,11 @@ const Dashboard: React.FC = () => {
         // Add to local state for immediate display
         addReport({
           title: createdReport.title,
+          hazardtype: createdReport.hazardtype || newReportCategory,
+          description: newReportDescription,
           location: createdReport.location,
-          name: "Admin System",
-          status: createdReport.status || "Pending",
-          category: createdReport.hazardtype,
-          attachmentUrl: createdReport.images && createdReport.images.length > 0 ? createdReport.images[0] : undefined,
-          locationData: { text: createdReport.location, city: createdReport.city, country: createdReport.country }
+          city: createdReport.city || newReportCity || "Unknown",
+          country: createdReport.country || newReportCountry || "Ghana"
         });
 
         toast.success("Report created successfully!");

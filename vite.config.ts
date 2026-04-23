@@ -26,7 +26,6 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
   },
   server: {
-    // Enable gzip compression for dev server
-    compress: true,
+    // Server configuration
   },
 })

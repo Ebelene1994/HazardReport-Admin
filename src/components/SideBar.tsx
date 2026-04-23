@@ -75,7 +75,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, setIsOpen }) => {
     addReport({
       title: reportTitle,
       location: reportLocation || "Global",
-      name: "Admin System",
       status: "Confirmed",
       category: reportCategory,
       attachmentName: selectedFiles.length > 0 ? `${selectedFiles.length} file(s)` : undefined,
@@ -86,7 +85,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, setIsOpen }) => {
     addAnnouncement({
       title: `Report: ${reportTitle}`,
       detail: reportDescription || `New ${reportCategory} report submitted from ${reportLocation || "Global"}.`,
-      category: reportCategory.toLowerCase(),
+      category: "Info",
       status: "Active",
       location: reportLocation ? { text: reportLocation } : undefined
     });

@@ -3,6 +3,7 @@ import { FiMail, FiMessageSquare, FiBell, FiShield, FiSmartphone, FiMonitor, FiM
 import toast from "react-hot-toast";
 import adminDashboard from '../assets/images/adminDashboard.jpg';
 import { useDashboard } from "../context/DashboardContext";
+import { UserProfile } from "../interfaces/user";
 
 const Settings: React.FC = () => {
   const { userProfile, updateUserProfile } = useDashboard();
